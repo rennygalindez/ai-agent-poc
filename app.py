@@ -66,7 +66,7 @@ def recording():
     # ----------------------------------------------------------------
     # 1️⃣ Descargar la grabación
     # ----------------------------------------------------------------
-    audio = requests.get(recording_url + ".wav", auth=(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN))
+    audio = requests.get(recording_url + ".mp3", auth=(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN))
     input_file = tempfile.NamedTemporaryFile(mode='wb', suffix='.wav', delete=False)
     input_file.write(audio.content)
     input_file.close()
