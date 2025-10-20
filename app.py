@@ -64,25 +64,36 @@ def recording():
     print(f"🎙️ [{call_id}] Grabación recibida: {recording_url}")
 
     # ----------------------------------------------------------------
-    # 1️⃣ Descargar la grabación
+    # 1️⃣ Descargar la grabación (formato MP3)
     # ----------------------------------------------------------------
-    audio = requests.get(recording_url + ".mp3", auth=(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN))
-    input_file = tempfile.NamedTemporaryFile(mode='wb', suffix='.wav', delete=False)
-    input_file.write(audio.content)
-    input_file.close()
-    print(f"✅ [{call_id}] Grabación descargada correctamente")
+    try:
+        audio = requests.get(recording_url + ".mp3", auth=(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN))
+        input_file = tempfile.NamedTemporaryFile(mode='wb', suffix='.mp3', delete=False)
+        input_file.write(audio.content)
+        input_file.close()
+        print(f"✅ [{call_id}] Grabación descargada correctamente")
+    except Exception as e:
+        print(f"❌ [{call_id}] Error descargando audio: {e}")
+        return Response("""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say language="es-ES">Hubo un problema al procesar tu grabación.</Say>
+</Response>""", mimetype="text/xml")
 
     # ----------------------------------------------------------------
     # 2️⃣ Transcribir con Whisper
     # ----------------------------------------------------------------
-    print(f"🎤 [{call_id}] Transcribiendo audio...")
-    with open(input_file.name, "rb") as f:
-        transcript = client.audio.transcriptions.create(
-            model="whisper-1",
-            file=f
-        )
-    texto_usuario = transcript.text.strip()
-    print(f"👤 [{call_id}] Usuario: {texto_usuario}")
+    try:
+        print(f"🎤 [{call_id}] Transcribiendo audio...")
+        with open(input_file.name, "rb") as f:
+            transcript = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=f
+            )
+        texto_usuario = transcript.text.strip()
+        print(f"👤 [{call_id}] Usuario: {texto_usuario}")
+    except Exception as e:
+        print(f"❌ [{call_id}] Error transcribiendo audio: {e}")
+        texto_usuario = "Error al transcribir el mensaje del usuario."
 
     # ----------------------------------------------------------------
     # 3️⃣ Generar respuesta con GPT
@@ -102,16 +113,22 @@ def recording():
     # 4️⃣ Convertir texto → voz con TTS
     # ----------------------------------------------------------------
     print(f"🔊 [{call_id}] Convirtiendo texto a voz...")
-    speech = client.audio.speech.create(
-        model="tts-1",
-        voice="alloy",
-        input=texto_respuesta
-    )
-
-    output_file = tempfile.NamedTemporaryFile(mode='wb', suffix='.mp3', delete=False)
-    output_file.write(speech.content)
-    output_file.close()
-    print(f"✅ [{call_id}] Audio de respuesta generado")
+    try:
+        speech = client.audio.speech.create(
+            model="tts-1",
+            voice="alloy",
+            input=texto_respuesta
+        )
+        output_file = tempfile.NamedTemporaryFile(mode='wb', suffix='.mp3', delete=False)
+        output_file.write(speech.content)
+        output_file.close()
+        print(f"✅ [{call_id}] Audio de respuesta generado")
+    except Exception as e:
+        print(f"❌ [{call_id}] Error generando TTS: {e}")
+        return Response("""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say language="es-ES">Tu mensaje fue recibido, pero hubo un error al generar la respuesta de voz.</Say>
+</Response>""", mimetype="text/xml")
 
     # ----------------------------------------------------------------
     # 5️⃣ Responder a Twilio para que reproduzca el audio
