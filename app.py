@@ -34,12 +34,13 @@ def voice():
     twiml = """<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Say language="es-ES">Hola, por favor deja tu mensaje después del tono. Cuando termines, cuelga o espera.</Say>
-    <Record 
-        action="/recording" 
-        method="POST" 
-        maxLength="20"
-        finishOnKey="*" 
-        playBeep="true" />
+<Record
+    action="/recording"
+    method="POST"
+    maxLength="20"
+    finishOnKey="*"
+    playBeep="true"
+    recordingFormat="mp3" />
 </Response>"""
 
     return Response(twiml, mimetype="text/xml")
